@@ -1,0 +1,44 @@
+{
+    "BASE_URL": "https://api.modrinth.com/v2",
+    "ENDPOINTS": {
+        "search": "/search",
+        "projects": {
+            "project": "/project/{id}",
+            "project_versions": "/project/{id}/version",
+            "dependencies": "/project/{id}/dependencies",
+            "icon": "/project/{id}/icon",
+            "gallery": "/project/{id}/gallery",
+            "check_following": "/project/{id}/check_following"
+        },
+        "versions": {
+            "version": "/version/{id}",
+            "files": "/version/{id}/files",
+            "download": "/version/{id}/file/{filename}",
+            "file_by_hash": "/version_file/{hash}",
+            "versions_by_hash": "/version_file/{hash}/versions",
+            "latest_for_hash": "/version_file/{hash}/update?algorithm={algo}"
+        },
+        "tags": {
+            "categories": "/tag/category",
+            "loaders": "/tag/loader",
+            "game_versions": "/tag/game_version",
+            "licenses": "/tag/license",
+            "environments": "/tag/environment"
+        },
+        "teams": {
+            "team": "/team/{id}",
+            "members": "/team/{id}/members"
+        },
+        "user": {
+            "user": "/user/{id}",
+            "user_projects": "/user/{id}/projects",
+            "notifications": "/user/{id}/notifications",
+            "avatar": "/user/{id}/avatar"
+        },
+        "bulk": {
+            "projects": "/projects",
+            "versions": "/versions",
+            "version_files": "/version_files"
+        }
+    }
+}

@@ -37,19 +37,3 @@ poetry install
 ```bash
 pip install -r requirements.txt
 ```
-
-## Usage Examples
-
-```bash
-# Search for mods/projects
-smithpy search sodium
-
-# Build a modpack from a config/manifest
-smithpy build mypack/
-
-# Validate an existing modrinth.index.json
-smithpy validate path/to/modrinth.index.json
-
-# Download and assemble a full modpack
-smithpy download --pack fabulously-optimized --output myinstance/
-```

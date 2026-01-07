@@ -71,6 +71,29 @@ class ModrinthAPIConfig:
         limit: Optional[int] = 10,
         index: Optional[str] = "relevance",
     ) -> str:
+        """
+        Build the Modrinth search URL with query parameters.
+
+        Docs: https://docs.modrinth.com/api-spec#endpoints-search
+
+        Facets format: [[inner AND], [inner AND]] = outer OR
+        Example: [["categories:performance"], ["project_type:mod"]]
+
+        Args:
+            query: Search term (e.g., "sodium")
+            facets: Advanced filters as list of lists or JSON string
+            categories: Filter by categories (e.g., ["performance"])
+            loaders: Filter by loaders (e.g., ["fabric", "quilt"])
+            game_versions: Filter by Minecraft versions (e.g., ["1.21.1"])
+            license_: Filter by license (e.g., "MIT")
+            project_type: "mod", "resourcepack", "shader", "modpack", "datapack"
+            offset: Pagination offset
+            limit: Results per page (max 100)
+            index: Sort by "relevance", "downloads", "updated", "newest"
+
+        Returns:
+            Full search URL with query parameters
+        """
         base = self.build_url(self.endpoints["search"])
         params = []
         if query:

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://frank1o3.github.io/smithpy/schemas/policy.schema.yml",
+  "$id": "https://frank1o3.github.io/smithpy/schemas/policy.schema.json",
   "title": "Modrinth API Definition Schema",
   "type": "object",
   "required": [

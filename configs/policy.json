@@ -33,7 +33,7 @@
       "vulkanmod-extra"
     ]
   },
-  "mod menu": {
+  "mod-menu": {
     "sub_mods": [
       "yetanotherconfiglib",
       "cloth-config-api"

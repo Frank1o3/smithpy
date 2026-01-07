@@ -1,41 +1,43 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://frank1o3.github.io/smithpy/schemas/policy.schema.json",
-  "title": "Mod Policy Schema",
-  "description": "Schema for policy.json defining mod conflicts and sub-mod relationships",
+  "title": "SmithPy Mod Policy Schema",
+  "description": "Defines mod conflict and dependency rules for SmithPy",
   "type": "object",
-  "additionalProperties": {
-    "$ref": "#/$defs/modRule"
+
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri"
+    }
   },
+
+  "additionalProperties": {
+    "type": "object",
+    "required": ["conflicts", "sub_mods"],
+    "properties": {
+      "conflicts": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/modId" },
+        "uniqueItems": true,
+        "default": []
+      },
+      "sub_mods": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/modId" },
+        "uniqueItems": true,
+        "default": []
+      }
+    },
+    "additionalProperties": false
+  },
+
   "$defs": {
     "modId": {
       "type": "string",
-      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-      "description": "Canonical mod identifier (kebab-case)"
-    },
-    "modRule": {
-      "type": "object",
-      "required": [
-        "conflicts",
-        "sub_mods"
-      ],
-      "properties": {
-        "conflicts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/modId"
-          },
-          "uniqueItems": true
-        },
-        "sub_mods": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/modId"
-          },
-          "uniqueItems": true
-        }
-      },
-      "additionalProperties": false
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+$",
+      "description": "Modrinth-style mod identifier"
     }
   }
 }

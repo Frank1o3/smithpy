@@ -6,7 +6,7 @@
 
 **SmithPy** is a powerful CLI tool for building and managing custom Minecraft modpacks using the Modrinth API v2.
 
-Search for projects, fetch versions, validate manifests, download mods with hash checks, and generate complete `.mrpack` files — all from the terminal.
+Search for projects, fetch versions, validate manifests, download mods with hash checks, and generate complete files — all from the terminal.
 
 Ideal for modpack developers, server admins, and automation scripts.
 

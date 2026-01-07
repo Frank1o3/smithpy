@@ -1,0 +1,19 @@
+{
+  "$schema": "https://frank1o3.github.io/smithpy/schemas/policy.schema.yml",
+
+  "sodium": {
+    "conflicts": ["vulkan-mod"],
+    "sub_mods": [
+      "sodium-extra",
+      "sodium-dynamic-lights",
+      "reeses-sodium-options",
+      "immediatelyfast",
+      "lambdynamiclights"
+    ]
+  },
+
+  "vulkan-mod": {
+    "conflicts": ["sodium"],
+    "sub_mods": []
+  }
+}

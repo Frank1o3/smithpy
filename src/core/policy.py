@@ -69,40 +69,38 @@ class ModPolicy:
             rule["sub_mods"] = set(rule.get("sub_mods", []))
 
     # ---------- public API ----------
-
     def apply(self, mods: Iterable[str]) -> Set[str]:
         """
         Apply policy to a mod set.
-
-        Returns a NEW set (does not mutate input).
+        Recursively adds sub-mods and removes conflicts.
         """
         active: Set[str] = set(mods)
-        removed: Set[str] = set()
-        added: Set[str] = set()
+        
+        # 1. Expand sub-mods recursively
+        # We use a queue to ensure we check the rules for every newly added mod
+        to_process = list(active)
+        while to_process:
+            current_mod = to_process.pop(0)
+            rule = self.rules.get(current_mod)
+            
+            if rule and "sub_mods" in rule:
+                for sub in rule["sub_mods"]:
+                    if sub not in active:
+                        active.add(sub)
+                        # Add the new mod to the queue so its own sub-mods are checked
+                        to_process.append(sub)
 
-        # Remove conflicts
-        for mod in list(active):
+        # 2. Remove conflicts
+        # After all possible mods are added, we filter out conflicts
+        final_mods = active.copy()
+        for mod in active:
             rule = self.rules.get(mod)
-            if not rule:
-                continue
+            if rule and "conflicts" in rule:
+                for conflict in rule["conflicts"]:
+                    if conflict in final_mods:
+                        final_mods.remove(conflict)
 
-            for conflict in rule["conflicts"]:
-                if conflict in active:
-                    active.remove(conflict)
-                    removed.add(conflict)
-
-        # Add sub-mods
-        for mod in list(active):
-            rule = self.rules.get(mod)
-            if not rule:
-                continue
-
-            for sub in rule["sub_mods"]:
-                if sub not in active:
-                    active.add(sub)
-                    added.add(sub)
-
-        return active
+        return final_mods
 
     def diff(self, mods: Iterable[str]) -> Dict[str, List[str]]:
         """

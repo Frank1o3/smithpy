@@ -8,7 +8,8 @@ from pathlib import Path
 import rich
 
 
-script_path = Path(__file__).parent / "src"
+script_path = Path(__file__).parent
+print(script_path)
 sys.path.append(str(script_path / "api"))
 sys.path.append(str(script_path / "core"))
 

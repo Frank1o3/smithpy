@@ -31,7 +31,7 @@ jobs:
           VERSION=$(python - <<'EOF'
           from pathlib import Path
           ns = {}
-          exec(Path("smithpy/__version__.py").read_text(), ns)
+          exec(Path("/src/smithpy/__version__.py").read_text(), ns)
           print(ns["__version__"])
           EOF
           )

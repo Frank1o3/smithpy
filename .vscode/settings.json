@@ -2,14 +2,13 @@
     "[python]": {
         "diffEditor.ignoreTrimWhitespace": false,
         "editor.defaultColorDecorators": "never",
-        "gitlens.codeLens.symbolScopes": [
-            "!Module"
-        ],
         "editor.formatOnType": true,
         "editor.wordBasedSuggestions": "off"
     },
     "python-envs.defaultEnvManager": "ms-python.python:poetry",
     "python-envs.defaultPackageManager": "ms-python.python:poetry",
     "python-envs.pythonProjects": [],
-    "python.analysis.autoImportCompletions": false
+    "python.analysis.autoImportCompletions": false,
+    "git.autofetch": "all",
+    "git.autofetchPeriod": 60
 }

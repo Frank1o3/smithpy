@@ -25,16 +25,10 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
 
-      - name: Read __version__
+      - name: Read version
         id: version
         run: |
-          VERSION=$(python - <<'EOF'
-          from pathlib import Path
-          ns = {}
-          exec(Path("/src/smithpy/__version__.py").read_text(), ns)
-          print(ns["__version__"])
-          EOF
-          )
+          VERSION=$(poetry version -s)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build package

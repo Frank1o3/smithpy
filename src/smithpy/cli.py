@@ -131,20 +131,28 @@ def setup(name: str, mc: str = "1.21.1", loader: str = "fabric"):
     }
     (pack_dir / "modrinth.index.json").write_text(json.dumps(index_data, indent=2))
 
-    console.print(f"🚀 Project [bold cyan]{name}[/bold cyan] ready at {pack_dir}", style="green")
+    console.print(f"Project [bold cyan]{name}[/bold cyan] ready at {pack_dir}", style="green")
+
 @app.command()
-def add(name: str, project_type: str = "mod", pack: str = "testpack"):
+def add(name: str, project_type: str = "mod", pack_name: str = "testpack"):
     """Search and add a project to the manifest without overwriting existing data"""
-    # 1. Load Registry to find the correct folder
+    
+    # --- API LIMITATION CHECK ---
+    if project_type in ["resourcepack", "shaderpack"]:
+        console.print(
+            f"[bold yellow]Notice:[/bold yellow] Adding {project_type}s is currently [red]Not Implemented[/red]. "
+            "The search API is currently limited to mods."
+        )
+        return
+
     registry = json.loads(REGISTRY_PATH.read_text())
-    if pack not in registry:
-        console.print(f"[red]Error:[/red] Pack '{pack}' not found in registry.")
+    if pack_name not in registry:
+        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.")
         return
         
-    pack_path = Path(registry[pack])
+    pack_path = Path(registry[pack_name])
     manifest_file = pack_path / "smithpy.json"
-
-    # 2. Validation: Ensure the file exists and is readable
+    
     manifest = get_manifest(pack_path)
     if not manifest:
         console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}")
@@ -163,7 +171,7 @@ def add(name: str, project_type: str = "mod", pack: str = "testpack"):
                 results = SearchResult.model_validate_json(await response.text())
             
             if not results or not results.hits:
-                console.print(f"❌ No {project_type} found for '{name}'")
+                console.print(f"[red]No {project_type} found for '{name}'")
                 return
 
             # Match slug
@@ -171,6 +179,7 @@ def add(name: str, project_type: str = "mod", pack: str = "testpack"):
             slug = target_hit.slug
             
             # 3. Modify the existing manifest object
+            # Only 'mod' will reach here currently due to the check above
             target_list = {
                 "mod": manifest.mods,
                 "resourcepack": manifest.resourcepacks,
@@ -179,7 +188,6 @@ def add(name: str, project_type: str = "mod", pack: str = "testpack"):
 
             if slug not in target_list:
                 target_list.append(slug)
-                # 4. Write the UPDATED manifest back to the correct path
                 manifest_file.write_text(manifest.model_dump_json(indent=4))
                 console.print(f"Added [green]{slug}[/green] to {project_type}s")
             else:
@@ -189,9 +197,56 @@ def add(name: str, project_type: str = "mod", pack: str = "testpack"):
 
 
 @app.command()
-def resolve():
-    ...
+def resolve(pack_name: str = "testpack"):
+    from smithpy.core import ModResolver, ModPolicy
+    
+    # 1. Load Registry and Manifest
+    registry = json.loads(REGISTRY_PATH.read_text())
+    if pack_name not in registry:
+        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.")
+        return
+        
+    pack_path = Path(registry[pack_name])
+    manifest_file = pack_path / "smithpy.json"
 
+    manifest = get_manifest(pack_path)
+    if not manifest:
+        console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}")
+        return
+    
+    # 2. Run Resolution Logic
+    console.print(f"Resolving dependencies for [bold cyan]{pack_name}[/bold cyan]...", style="yellow")
+    policy = ModPolicy()
+    resolver = ModResolver(
+        policy=policy, 
+        api=api, 
+        mc_version=manifest.minecraft, 
+        loader=manifest.loader
+    )
+    
+    # This returns a Set[str] of unique Modrinth Project IDs
+    resolved_mods = resolver.resolve(manifest.mods)
+    
+    # 3. Update Manifest with Resolved IDs
+    # We convert the set to a sorted list for a clean JSON file
+    manifest.mods = sorted(list(resolved_mods))
+    
+    # 4. Save back to smithpy.json
+    try:
+        manifest_file.write_text(manifest.model_dump_json(indent=4))
+        console.print(f"Successfully updated [bold]{manifest_file.name}[/bold]")
+        console.print(f"Total mods resolved: [bold green]{len(manifest.mods)}[/bold green]")
+    except Exception as e:
+        console.print(f"[red]Error saving manifest:[/red] {e}")
+
+    # Optional: Print a summary table of the IDs
+    if manifest.mods:
+        table = Table(title=f"Resolved IDs for {pack_name}")
+        table.add_column("Project ID", style="green")
+        for mod_id in manifest.mods:
+            table.add_row(mod_id)
+        console.print(table)
+    
 
 @app.command()
 def build():
@@ -218,18 +273,18 @@ def export():
     pack_name = manifest.name
     zip_name = f"{pack_name}.mrpack"
     
-    console.print(f"📦 Exporting to {zip_name}...", style="yellow")
+    console.print(f"Exporting to {zip_name}...", style="yellow")
     
     # Create the zip from the current directory
     shutil.make_archive(pack_name, 'zip', Path.cwd())
     Path(f"{pack_name}.zip").rename(zip_name)
     
-    console.print(f"✅ Exported {zip_name} successfully!", style="green bold")
+    console.print(f"Exported {zip_name} successfully!", style="green bold")
 
     # Optional Cleanup
     if Confirm.ask("Do you want to delete the source project directory?"):
         shutil.rmtree(Path.cwd())
-        console.print("🗑  Project directory removed.", style="dim")
+        console.print("Project directory removed.", style="dim")
 
 @app.command(name="ls")
 def list_projects():

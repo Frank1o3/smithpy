@@ -1,6 +1,7 @@
 name: Release SmithPy
 
 on:
+    workflow_dispatch:
     push:
         tags:
             - "v*"

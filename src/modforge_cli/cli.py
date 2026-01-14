@@ -61,13 +61,16 @@ api = ModrinthAPIConfig(MODRINTH_API)
 
 
 def render_banner():
-    """Renders a high-quality stylized banner"""
-    ascii_art = figlet_format("ModForge-CLI", font="slant")
-
-    # Create a colorful gradient-like effect for the text
+    """Renders a high-quality stylized banner that respects terminal width"""
+    # Get the current terminal width
+    width = console.width
+    
+    # Use a smaller font or logic if the terminal is very narrow
+    font = "slant" if width > 60 else "small"
+    
+    ascii_art = figlet_format("ModForge-CLI", font=font)
     banner_text = Text(ascii_art, style="bold cyan")
 
-    # Add extra info line
     info_line = Text.assemble(
         (" ⛏  ", "yellow"),
         (f"v{__version__}", "bold white"),
@@ -76,14 +79,16 @@ def render_banner():
         (f"{__author__}", "bold magenta"),
     )
 
-    # Wrap in a nice panel
+    # Use expand=False so the panel shrinks to fit the text, 
+    # but stays within terminal bounds.
     console.print(
         Panel(
             Text.assemble(banner_text, "\n", info_line),
             border_style="blue",
             padding=(1, 2),
-            expand=False,
-        )
+            expand=False, 
+        ),
+        justify="left"
     )
 
 
@@ -98,29 +103,29 @@ def main_callback(
     ModForge-CLI: A powerful Minecraft modpack manager for Modrinth.
     """
     if version:
-        console.print(f"ModForge-CLI Version: [bold cyan]{__version__}[/bold cyan]")
+        console.print(f"ModForge-CLI Version: [bold cyan]{__version__}[/bold cyan]", width=console.width)
         raise typer.Exit()
 
     # If no command is provided (e.g., just 'ModForge-CLI')
     if ctx.invoked_subcommand is None:
         render_banner()
         console.print(
-            "\n[bold yellow]Usage:[/bold yellow] ModForge-CLI [COMMAND] [ARGS]..."
+            "\n[bold yellow]Usage:[/bold yellow] ModForge-CLI [COMMAND] [ARGS]...", width=console.width
         )
-        console.print("\n[bold cyan]Core Commands:[/bold cyan]")
-        console.print("  [green]setup[/green]    Initialize a new modpack project")
-        console.print("  [green]ls[/green]       List all registered projects")
-        console.print("  [green]add[/green]      Add a mod/resource/shader to manifest")
+        console.print("\n[bold cyan]Core Commands:[/bold cyan]", width=console.width)
+        console.print("  [green]setup[/green]    Initialize a new modpack project", width=console.width)
+        console.print("  [green]ls[/green]       List all registered projects", width=console.width)
+        console.print("  [green]add[/green]      Add a mod/resource/shader to manifest", width=console.width)
         console.print(
-            "  [green]build[/green]    Download files and setup loader version"
+            "  [green]build[/green]    Download files and setup loader version", width=console.width
         )
-        console.print("  [green]export[/green]   Create the final .mrpack zip")
+        console.print("  [green]export[/green]   Create the final .mrpack zip", width=console.width)
         console.print(
-            "  [green]remove[/green]   Removes a modpack that you have locally."
+            "  [green]remove[/green]   Removes a modpack that you have locally.", width=console.width
         )
 
         console.print(
-            "\nRun [white]ModForge-CLI --help[/white] for full command details.\n"
+            "\nRun [white]ModForge-CLI --help[/white] for full command details.\n", width=console.width
         )
 
 
@@ -169,7 +174,7 @@ def setup(
     (pack_dir / "modrinth.index.json").write_text(json.dumps(index_data, indent=2))
 
     console.print(
-        f"Project [bold cyan]{name}[/bold cyan] ready at {pack_dir}", style="green"
+        f"Project [bold cyan]{name}[/bold cyan] ready at {pack_dir}", style="green", width=console.width
     )
 
 
@@ -193,7 +198,7 @@ def add(name: str, project_type: str = "mod", pack_name: str = "testpack"):
     pack_path = Path(registry[pack_name])
     manifest_file = pack_path / "ModForge-CLI.json"
 
-    manifest = get_manifest(pack_path)
+    manifest = get_manifest(console, pack_path)
     if not manifest:
         console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}")
         return
@@ -206,21 +211,21 @@ def resolve(pack_name: str = "testpack"):
     # 1. Load Registry and Manifest
     registry = json.loads(REGISTRY_PATH.read_text())
     if pack_name not in registry:
-        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.")
+        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.", width=console.width)
         return
 
     pack_path = Path(registry[pack_name])
     manifest_file = pack_path / "ModForge-CLI.json"
 
-    manifest = get_manifest(pack_path)
+    manifest = get_manifest(console, pack_path)
     if not manifest:
-        console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}")
+        console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}", width=console.width)
         return
 
     # 2. Run Resolution Logic
     console.print(
         f"Resolving dependencies for [bold cyan]{pack_name}[/bold cyan]...",
-        style="yellow",
+        style="yellow", width=console.width
     )
     policy = ModPolicy(POLICY_PATH)
     resolver = ModResolver(
@@ -237,12 +242,12 @@ def resolve(pack_name: str = "testpack"):
     # 4. Save back to ModForge-CLI.json
     try:
         manifest_file.write_text(manifest.model_dump_json(indent=4))
-        console.print(f"Successfully updated [bold]{manifest_file.name}[/bold]")
+        console.print(f"Successfully updated [bold]{manifest_file.name}[/bold]", width=console.width)
         console.print(
-            f"Total mods resolved: [bold green]{len(manifest.mods)}[/bold green]"
+            f"Total mods resolved: [bold green]{len(manifest.mods)}[/bold green]", width=console.width
         )
     except Exception as e:
-        console.print(f"[red]Error saving manifest:[/red] {e}")
+        console.print(f"[red]Error saving manifest:[/red] {e}", width=console.width)
 
     # Optional: Print a summary table of the IDs
     if manifest.mods:
@@ -250,7 +255,7 @@ def resolve(pack_name: str = "testpack"):
         table.add_column("Project ID", style="green")
         for mod_id in manifest.mods:
             table.add_row(mod_id)
-        console.print(table)
+        console.print(table, width=console.width)
 
 
 @app.command()
@@ -260,15 +265,15 @@ def build(pack_name: str = "testpack"):
     # 1. Load Registry and Manifest
     registry = json.loads(REGISTRY_PATH.read_text())
     if pack_name not in registry:
-        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.")
+        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.", width=console.width)
         return
 
     pack_path = Path(registry[pack_name])
     manifest_file = pack_path / "ModForge-CLI.json"
 
-    manifest = get_manifest(pack_path)
+    manifest = get_manifest(console, pack_path)
     if not manifest:
-        console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}")
+        console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}", width=console.width)
         return
 
     pack_root = Path.cwd() / manifest.name
@@ -277,9 +282,9 @@ def build(pack_name: str = "testpack"):
 
     mods_dir.mkdir(exist_ok=True)
 
-    console.print(f"🛠  Building [bold cyan]{manifest.name}[/bold cyan]...")
+    console.print(f"🛠  Building [bold cyan]{manifest.name}[/bold cyan]...", width=console.width)
     asyncio.run(run(api, manifest, mods_dir, index_file))
-    console.print("✨ Build complete. Mods downloaded and indexed.", style="green")
+    console.print("✨ Build complete. Mods downloaded and indexed.", style="green", width=console.width)
 
 
 @app.command()
@@ -289,35 +294,35 @@ def export(pack_name: str = "testpack"):
     # 1. Load Registry and Manifest
     registry = json.loads(REGISTRY_PATH.read_text())
     if pack_name not in registry:
-        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.")
+        console.print(f"[red]Error:[/red] Pack '{pack_name}' not found in registry.", width=console.width)
         return
 
     pack_path = Path(registry[pack_name])
     manifest_file = pack_path / "ModForge-CLI.json"
 
-    manifest = get_manifest(pack_path)
+    manifest = get_manifest(console, pack_path)
     if not manifest:
-        console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}")
+        console.print(f"[red]Error:[/red] Could not load manifest at {manifest_file}", width=console.width)
         return
     loader_version = manifest.loader_version or FABRIC_LOADER_VERSION
 
-    console.print("📦 Finalizing pack...", style="cyan")
+    console.print("📦 Finalizing pack...", style="cyan", width=console.width)
 
     mods_dir = Path.cwd() / manifest.name / "mods"
     if not mods_dir.exists() or not any(mods_dir.iterdir()):
-        console.print("[red]No mods found. Run `ModForge-CLI build` first.[/red]")
+        console.print("[red]No mods found. Run `ModForge-CLI build` first.[/red]", width=console.width)
         raise typer.Exit(1)
 
     if manifest.loader == "fabric":
         installer = Path.cwd() / manifest.name / ".fabric-installer.jar"
 
         if not installer.exists():
-            console.print("Downloading Fabric installer...")
+            console.print("Downloading Fabric installer...", width=console.width)
             import urllib.request
 
             urllib.request.urlretrieve(FABRIC_INSTALLER_URL, installer)
 
-        console.print("Installing Fabric...")
+        console.print("Installing Fabric...", width=console.width)
         install_fabric(
             installer=installer,
             mc_version=manifest.minecraft,
@@ -341,20 +346,20 @@ def export(pack_name: str = "testpack"):
         root_dir=Path.cwd(),
     )
 
-    console.print(f"✅ Exported {zip_path.name}", style="green bold")
+    console.print(f"✅ Exported {zip_path.name}", style="green bold", width=console.width)
 
 
 @app.command()
 def remove(pack_name: str):
     """Completely remove a modpack and unregister it"""
     if not REGISTRY_PATH.exists():
-        console.print("[red]No registry found.[/red]")
+        console.print("[red]No registry found.[/red]", width=console.width)
         raise typer.Exit(1)
 
     registry = json.loads(REGISTRY_PATH.read_text())
 
     if pack_name not in registry:
-        console.print(f"[red]Pack '{pack_name}' not found in registry.[/red]")
+        console.print(f"[red]Pack '{pack_name}' not found in registry.[/red]", width=console.width)
         raise typer.Exit(1)
 
     pack_path = Path(registry[pack_name])
@@ -365,7 +370,7 @@ def remove(pack_name: str):
             f"[white]{pack_name}[/white]\n"
             f"[dim]{pack_path}[/dim]",
             title="⚠️  Destructive Action",
-            border_style="red",
+            border_style="red", width=console.width
         )
     )
 
@@ -379,10 +384,10 @@ def remove(pack_name: str):
             shutil.rmtree(pack_path)
         else:
             console.print(
-                f"[yellow]Warning:[/yellow] Pack directory does not exist: {pack_path}"
+                f"[yellow]Warning:[/yellow] Pack directory does not exist: {pack_path}", width=console.width
             )
     except Exception as e:
-        console.print(f"[red]Failed to delete pack directory:[/red] {e}")
+        console.print(f"[red]Failed to delete pack directory:[/red] {e}", width=console.width)
         raise typer.Exit(1)
 
     # Update registry
@@ -391,7 +396,7 @@ def remove(pack_name: str):
 
     console.print(
         f"🗑️  Removed pack [bold cyan]{pack_name}[/bold cyan] successfully.",
-        style="green",
+        style="green", width=console.width
     )
 
 
@@ -409,7 +414,7 @@ def list_projects():
 
     for name, path in registry.items():
         table.add_row(name, path)
-    console.print(table)
+    console.print(table, width=console.width)
 
 
 @app.command()
@@ -418,7 +423,7 @@ def self_update_cmd():
     Update ModForge-CLI to the latest version.
     """
     try:
-        self_update()
+        self_update(console)
     except subprocess.CalledProcessError:
         raise typer.Exit(code=1)
 

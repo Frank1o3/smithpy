@@ -1,49 +1,64 @@
-# Schemas
+---
+layout: default
+title: Home
+nav_order: 1
+has_children: true
+---
 
-SmithPy is built around **schema‑driven configuration**. These schemas define how the CLI interprets policies, resolves dependencies, and interacts with external APIs.
+# SmithPy ⛏
+
+**SmithPy** is a modern, opinionated CLI tool for building, validating, and managing **Minecraft modpacks** using the **Modrinth API v2**.
+
+It focuses on **deterministic mod resolution**, **policy‑based dependency handling**, and **schema‑driven configuration**.
 
 ---
 
-## 📜 Policy Schema
+## ✨ Features
 
-**File:** `policy.schema.yml`
-
-Defines:
-
-* Mod inclusion rules
-* Conflict resolution
-* Sub‑mod expansion
-* Conditional dependencies
-
-This schema ensures that modpacks are **predictable, reproducible, and self‑documenting**.
-
-➡️ [View Policy Schema](./schemas/policy.schema.json)
+* 📦 Modrinth-first mod resolution
+* 🧠 Policy engine for conflicts and sub‑mods
+* 📜 JSON/YAML schema validation
+* ⚙️ Designed for automation and CI
+* 🐍 Distributed as a Python CLI via PyPI
 
 ---
 
-## 🔌 Modrinth API Schema
+## 🚀 Installation
 
-**File:** `modrinth_api.schema.yml`
+Recommended (via PyPI):
 
-Defines:
+```bash
+pipx install smithpy
+```
 
-* Supported Modrinth API endpoints
-* Request and response shapes
-* Version and loader mappings
+Alternative (virtualenv):
 
-This allows SmithPy to validate API interactions at runtime and during development.
-
-➡️ [View Modrinth API Schema](./schemas/modrinth_api.schema.json)
+```bash
+pip install smithpy
+```
 
 ---
 
-## 🛠 Why Schemas Matter
+## 📚 Documentation
 
-Schemas provide:
+* 📄 [Schemas Overview](./schemas.md)
+* 🧩 [Policy Schema](./schemas/policy.schema.json)
+* 🔌 [Modrinth API Schema](./schemas/modrinth_api.schema.json)
 
-* Early error detection
-* Strong validation guarantees
-* IDE auto‑completion
-* Long‑term stability
+---
 
-They are a core design principle of SmithPy.
+## 🔗 Links
+
+* 💻 [GitHub Repository](https://github.com/Frank1o3/smithpy)
+* 🐞 [Issue Tracker](https://github.com/Frank1o3/smithpy/issues)
+* 📦 [PyPI Project](https://pypi.org/project/smithpy)
+
+---
+
+## 🧪 Project Status
+
+SmithPy is **actively developed**.
+
+APIs and schemas are considered **stable**, while higher‑level CLI features continue to evolve.
+
+Feedback and contributions are welcome.

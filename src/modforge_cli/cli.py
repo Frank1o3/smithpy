@@ -17,6 +17,7 @@ from rich.text import Text
 
 from modforge_cli.api import ModrinthAPIConfig
 from modforge_cli.core import Manifest, ModDownloader, SearchResult
+from modforge_cli.core import ModPolicy, ModResolver
 
 # Import version info
 try:
@@ -315,7 +316,6 @@ def add(name: str, project_type: str = "mod", pack_name: str = "testpack"):
 
 @app.command()
 def resolve(pack_name: str = "testpack"):
-    from ModForge-CLI.core import ModPolicy, ModResolver
 
     # 1. Load Registry and Manifest
     registry = json.loads(REGISTRY_PATH.read_text())

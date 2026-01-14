@@ -1,7 +1,7 @@
 [project]
-name = "modforge-cli"
+name = "ModForge-CLI"
 version = "0.1.5"
-description = "ModForge-Cli — a Modrinth-based Minecraft modpack builder"
+description = "ModForge-CLI — a Modrinth-based Minecraft modpack builder"
 authors = [{ name = "Frank1o3", email = "jahdy1o3@gmail.com" }]
 license = { text = "MIT" }
 readme = "README.md"
@@ -48,8 +48,8 @@ dev = [
 package-mode = true
 
 [tool.poetry.scripts]
-ModForge-Cli = "ModForge-Cli.__main__:main"
+ModForge-CLI = "ModForge-CLI.__main__:main"
 
 [project.urls]
-Homepage = "https://frank1o3.github.io/ModForge-Cli/"
-Repository = "https://github.com/Frank1o3/ModForge-Cli"
+Homepage = "https://frank1o3.github.io/ModForge-CLI/"
+Repository = "https://github.com/Frank1o3/ModForge-CLI"

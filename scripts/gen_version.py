@@ -3,7 +3,7 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = ROOT / "pyproject.toml"
-OUT = ROOT / "src/ModForge-Cli/__version__.py"
+OUT = ROOT / "src/ModForge-CLI/__version__.py"
 
 
 def main() -> None:

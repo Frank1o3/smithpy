@@ -15,12 +15,12 @@ from rich.prompt import Confirm
 from rich.table import Table
 from rich.text import Text
 
-from ModForge-Cli.api import ModrinthAPIConfig
-from ModForge-Cli.core import Manifest, ModDownloader, SearchResult
+from ModForge-CLI.api import ModrinthAPIConfig
+from ModForge-CLI.core import Manifest, ModDownloader, SearchResult
 
 # Import version info
 try:
-    from ModForge-Cli.__version__ import __author__, __version__
+    from ModForge-CLI.__version__ import __author__, __version__
 except ImportError:
     __version__ = "unknown"
     __author__ = "Frank1o3"
@@ -31,7 +31,7 @@ app = typer.Typer(
 )
 console = Console()
 FABRIC_LOADER_VERSION = "0.18.3"
-CONFIG_PATH = Path().home() / ".config" / "ModForge-Cli"
+CONFIG_PATH = Path().home() / ".config" / "ModForge-CLI"
 REGISTRY_PATH = CONFIG_PATH / "registry.json"
 MODRINTH_API = CONFIG_PATH / "modrinth_api.json"
 POLICY_PATH = CONFIG_PATH / "policy.json"
@@ -40,9 +40,9 @@ FABRIC_INSTALLER_URL = (
     "https://maven.fabricmc.net/net/fabricmc/"
     "fabric-installer/1.1.1/fabric-installer-1.1.1.jar"
 )
-DEFAULT_MODRINTH_API_URL = "https://raw.githubusercontent.com/Frank1o3/ModForge-Cli/refs/heads/main/configs/modrinth_api.json"
+DEFAULT_MODRINTH_API_URL = "https://raw.githubusercontent.com/Frank1o3/ModForge-CLI/refs/heads/main/configs/modrinth_api.json"
 
-DEFAULT_POLICY_URL = "https://raw.githubusercontent.com/Frank1o3/ModForge-Cli/refs/heads/main/configs/policy.json"
+DEFAULT_POLICY_URL = "https://raw.githubusercontent.com/Frank1o3/ModForge-CLI/refs/heads/main/configs/policy.json"
 
 
 def ensure_config_file(path: Path, url: str, label: str):
@@ -81,15 +81,15 @@ api = ModrinthAPIConfig(MODRINTH_API)
 
 # --- Async Helper ---
 async def get_api_session():
-    """Returns a session with the correct ModForge-Cli headers."""
+    """Returns a session with the correct ModForge-CLI headers."""
     return aiohttp.ClientSession(
-        headers={"User-Agent": f"{__author__}/ModForge-Cli/{__version__}"},
+        headers={"User-Agent": f"{__author__}/ModForge-CLI/{__version__}"},
         raise_for_status=True,
     )
 
 
 def get_manifest(path: Path = Path.cwd()) -> Optional[Manifest]:
-    p = path / "ModForge-Cli.json"
+    p = path / "ModForge-CLI.json"
     if not p.exists():
         return None
     try:
@@ -134,22 +134,22 @@ def self_update():
     method = detect_install_method()
 
     if method == "pipx":
-        console.print("[cyan]Updating ModForge-Cli using pipx...[/cyan]")
-        subprocess.run(["pipx", "upgrade", "ModForge-Cli"], check=True)
+        console.print("[cyan]Updating ModForge-CLI using pipx...[/cyan]")
+        subprocess.run(["pipx", "upgrade", "ModForge-CLI"], check=True)
 
     else:
-        console.print("[cyan]Updating ModForge-Cli using pip...[/cyan]")
+        console.print("[cyan]Updating ModForge-CLI using pip...[/cyan]")
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "ModForge-Cli"],
+            [sys.executable, "-m", "pip", "install", "--upgrade", "ModForge-CLI"],
             check=True,
         )
 
-    console.print("[green]ModForge-Cli updated successfully.[/green]")
+    console.print("[green]ModForge-CLI updated successfully.[/green]")
 
 
 def render_banner():
     """Renders a high-quality stylized banner"""
-    ascii_art = figlet_format("ModForge-Cli", font="slant")
+    ascii_art = figlet_format("ModForge-CLI", font="slant")
 
     # Create a colorful gradient-like effect for the text
     banner_text = Text(ascii_art, style="bold cyan")
@@ -182,16 +182,16 @@ def main_callback(
     ),
 ):
     """
-    ModForge-Cli: A powerful Minecraft modpack manager for Modrinth.
+    ModForge-CLI: A powerful Minecraft modpack manager for Modrinth.
     """
     if version:
-        console.print(f"ModForge-Cli Version: [bold cyan]{__version__}[/bold cyan]")
+        console.print(f"ModForge-CLI Version: [bold cyan]{__version__}[/bold cyan]")
         raise typer.Exit()
 
-    # If no command is provided (e.g., just 'ModForge-Cli')
+    # If no command is provided (e.g., just 'ModForge-CLI')
     if ctx.invoked_subcommand is None:
         render_banner()
-        console.print("\n[bold yellow]Usage:[/bold yellow] ModForge-Cli [COMMAND] [ARGS]...")
+        console.print("\n[bold yellow]Usage:[/bold yellow] ModForge-CLI [COMMAND] [ARGS]...")
         console.print("\n[bold cyan]Core Commands:[/bold cyan]")
         console.print("  [green]setup[/green]    Initialize a new modpack project")
         console.print("  [green]ls[/green]       List all registered projects")
@@ -201,7 +201,7 @@ def main_callback(
         )
         console.print("  [green]export[/green]   Create the final .mrpack zip")
 
-        console.print("\nRun [white]ModForge-Cli --help[/white] for full command details.\n")
+        console.print("\nRun [white]ModForge-CLI --help[/white] for full command details.\n")
 
 
 @app.command()
@@ -211,7 +211,7 @@ def setup(name: str, mc: str = "1.21.1", loader: str = "fabric", loader_version:
     pack_dir.mkdir(parents=True, exist_ok=True)
 
 
-    # Standard ModForge-Cli structure (The Watermark)
+    # Standard ModForge-CLI structure (The Watermark)
     for folder in [
         "mods",
         "overrides/resourcepacks",
@@ -222,7 +222,7 @@ def setup(name: str, mc: str = "1.21.1", loader: str = "fabric", loader_version:
         (pack_dir / folder).mkdir(parents=True, exist_ok=True)
 
     manifest: Manifest = Manifest(name=name, minecraft=mc, loader=loader, loader_version=loader_version)
-    (pack_dir / "ModForge-Cli.json").write_text(manifest.model_dump_json(indent=4))
+    (pack_dir / "ModForge-CLI.json").write_text(manifest.model_dump_json(indent=4))
 
     # Register globally
     registry: dict[str, str] = (
@@ -266,7 +266,7 @@ def add(name: str, project_type: str = "mod", pack_name: str = "testpack"):
         return
 
     pack_path = Path(registry[pack_name])
-    manifest_file = pack_path / "ModForge-Cli.json"
+    manifest_file = pack_path / "ModForge-CLI.json"
 
     manifest = get_manifest(pack_path)
     if not manifest:
@@ -315,7 +315,7 @@ def add(name: str, project_type: str = "mod", pack_name: str = "testpack"):
 
 @app.command()
 def resolve(pack_name: str = "testpack"):
-    from ModForge-Cli.core import ModPolicy, ModResolver
+    from ModForge-CLI.core import ModPolicy, ModResolver
 
     # 1. Load Registry and Manifest
     registry = json.loads(REGISTRY_PATH.read_text())
@@ -324,7 +324,7 @@ def resolve(pack_name: str = "testpack"):
         return
 
     pack_path = Path(registry[pack_name])
-    manifest_file = pack_path / "ModForge-Cli.json"
+    manifest_file = pack_path / "ModForge-CLI.json"
 
     manifest = get_manifest(pack_path)
     if not manifest:
@@ -348,7 +348,7 @@ def resolve(pack_name: str = "testpack"):
     # We convert the set to a sorted list for a clean JSON file
     manifest.mods = sorted(list(resolved_mods))
 
-    # 4. Save back to ModForge-Cli.json
+    # 4. Save back to ModForge-CLI.json
     try:
         manifest_file.write_text(manifest.model_dump_json(indent=4))
         console.print(f"Successfully updated [bold]{manifest_file.name}[/bold]")
@@ -378,7 +378,7 @@ def build(pack_name: str = "testpack"):
         return
 
     pack_path = Path(registry[pack_name])
-    manifest_file = pack_path / "ModForge-Cli.json"
+    manifest_file = pack_path / "ModForge-CLI.json"
 
     manifest = get_manifest(pack_path)
     if not manifest:
@@ -393,7 +393,7 @@ def build(pack_name: str = "testpack"):
 
     async def run():
         async with aiohttp.ClientSession(
-            headers={"User-Agent": f"{__author__}/ModForge-Cli/{__version__}"},
+            headers={"User-Agent": f"{__author__}/ModForge-CLI/{__version__}"},
             raise_for_status=True,
         ) as session:
             downloader = ModDownloader(
@@ -422,7 +422,7 @@ def export(pack_name: str = "testpack"):
         return
 
     pack_path = Path(registry[pack_name])
-    manifest_file = pack_path / "ModForge-Cli.json"
+    manifest_file = pack_path / "ModForge-CLI.json"
 
     manifest = get_manifest(pack_path)
     if not manifest:
@@ -434,7 +434,7 @@ def export(pack_name: str = "testpack"):
 
     mods_dir = Path.cwd() / manifest.name / "mods"
     if not mods_dir.exists() or not any(mods_dir.iterdir()):
-        console.print("[red]No mods found. Run `ModForge-Cli build` first.[/red]")
+        console.print("[red]No mods found. Run `ModForge-CLI build` first.[/red]")
         raise typer.Exit(1)
 
     if manifest.loader == "fabric":
@@ -526,13 +526,13 @@ def remove(pack_name: str):
 
 @app.command(name="ls")
 def list_projects():
-    """Show all ModForge-Cli projects"""
+    """Show all ModForge-CLI projects"""
     if not REGISTRY_PATH.exists():
         console.print("No projects registered.")
         return
 
     registry = json.loads(REGISTRY_PATH.read_text())
-    table = Table(title="ModForge-Cli Managed Packs", header_style="bold magenta")
+    table = Table(title="ModForge-CLI Managed Packs", header_style="bold magenta")
     table.add_column("Pack Name", style="cyan")
     table.add_column("Location", style="dim")
 
@@ -543,7 +543,7 @@ def list_projects():
 @app.command()
 def self_update_cmd():
     """
-    Update ModForge-Cli to the latest version.
+    Update ModForge-CLI to the latest version.
     """
     try:
         self_update()

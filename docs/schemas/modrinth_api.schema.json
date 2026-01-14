@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://frank1o3.github.io/ModForge-Cli/schemas/modrinth_api.schema.json",
-  "title": "ModForge-Cli Modrinth API Config Schema",
+  "$id": "https://frank1o3.github.io/ModForge-CLI/schemas/modrinth_api.schema.json",
+  "title": "ModForge-CLI Modrinth API Config Schema",
   "description": "Schema for Modrinth API endpoint configuration",
   "type": "object",
   "required": [

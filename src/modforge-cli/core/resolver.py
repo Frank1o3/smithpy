@@ -1,14 +1,14 @@
 from typing import Iterable, Set
 from collections import deque
 
-from ModForge-Cli.core.policy import ModPolicy
-from ModForge-Cli.core.models import SearchResult, ProjectVersionList, ProjectVersion
-from ModForge-Cli.api import ModrinthAPIConfig
+from ModForge-CLI.core.policy import ModPolicy
+from ModForge-CLI.core.models import SearchResult, ProjectVersionList, ProjectVersion
+from ModForge-CLI.api import ModrinthAPIConfig
 from requests import get
 
 
 try:
-    from ModForge-Cli.__version__ import __version__, __author__
+    from ModForge-CLI.__version__ import __version__, __author__
 except ImportError:
     __version__ = "unknown"
     __author__ = "Frank1o3"
@@ -29,7 +29,7 @@ class ModResolver:
         self.loader = loader
 
         self._headers = {
-            "User-Agent": f"{__author__}/ModForge-Cli/{__version__}"
+            "User-Agent": f"{__author__}/ModForge-CLI/{__version__}"
         }
 
     def _select_version(self, versions: list[ProjectVersion]) -> ProjectVersion | None:

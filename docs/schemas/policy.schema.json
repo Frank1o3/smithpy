@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://frank1o3.github.io/ModForge-Cli/schemas/policy.schema.json",
-  "title": "ModForge-Cli Mod Policy Schema",
-  "description": "Defines mod conflict and dependency rules for ModForge-Cli",
+  "$id": "https://frank1o3.github.io/ModForge-CLI/schemas/policy.schema.json",
+  "title": "ModForge-CLI Mod Policy Schema",
+  "description": "Defines mod conflict and dependency rules for ModForge-CLI",
   "type": "object",
   "properties": {
     "$schema": {

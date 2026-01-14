@@ -5,9 +5,9 @@ nav_order: 1
 has_children: true
 ---
 
-# ModForge-Cli ⛏
+# ModForge-CLI ⛏
 
-**ModForge-Cli** is a modern, opinionated CLI tool for building, validating, and managing **Minecraft modpacks** using the **Modrinth API v2**.
+**ModForge-CLI** is a modern, opinionated CLI tool for building, validating, and managing **Minecraft modpacks** using the **Modrinth API v2**.
 
 It focuses on **deterministic mod resolution**, **policy‑based dependency handling**, and **schema‑driven configuration**.
 
@@ -28,13 +28,13 @@ It focuses on **deterministic mod resolution**, **policy‑based dependency hand
 Recommended (via PyPI):
 
 ```bash
-pipx install ModForge-Cli
+pipx install ModForge-CLI
 ```
 
 Alternative (virtualenv):
 
 ```bash
-pip install ModForge-Cli
+pip install ModForge-CLI
 ```
 
 ---
@@ -49,15 +49,15 @@ pip install ModForge-Cli
 
 ## 🔗 Links
 
-* 💻 [GitHub Repository](https://github.com/Frank1o3/ModForge-Cli)
-* 🐞 [Issue Tracker](https://github.com/Frank1o3/ModForge-Cli/issues)
-* 📦 [PyPI Project](https://pypi.org/project/ModForge-Cli)
+* 💻 [GitHub Repository](https://github.com/Frank1o3/ModForge-CLI)
+* 🐞 [Issue Tracker](https://github.com/Frank1o3/ModForge-CLI/issues)
+* 📦 [PyPI Project](https://pypi.org/project/ModForge-CLI)
 
 ---
 
 ## 🧪 Project Status
 
-ModForge-Cli is **actively developed**.
+ModForge-CLI is **actively developed**.
 
 APIs and schemas are considered **stable**, while higher‑level CLI features continue to evolve.
 

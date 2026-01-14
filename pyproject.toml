@@ -48,7 +48,7 @@ dev = [
 package-mode = true
 
 [tool.poetry.scripts]
-ModForge-CLI = "ModForge-CLI.__main__:main"
+modforge = "modforge_cli.__main__:main"
 
 [project.urls]
 Homepage = "https://frank1o3.github.io/ModForge-CLI/"

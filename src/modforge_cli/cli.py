@@ -146,6 +146,7 @@ def setup(
         "overrides/resourcepacks",
         "overrides/shaderpacks",
         "overrides/config",
+        "overrides/config/openloader/data",
         "versions",
     ]:
         (pack_dir / folder).mkdir(parents=True, exist_ok=True)

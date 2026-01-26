@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 from pathlib import Path
 import shutil
 import subprocess
@@ -46,7 +45,7 @@ app = typer.Typer(
 console = Console()
 
 # Configuration
-FABRIC_LOADER_VERSION = "0.18.4"
+FABRIC_LOADER_VERSION = "0.16.9"
 CONFIG_PATH = Path.home() / ".config" / "ModForge-CLI"
 REGISTRY_PATH = CONFIG_PATH / "registry.json"
 MODRINTH_API = CONFIG_PATH / "modrinth_api.json"
@@ -114,6 +113,7 @@ def main_callback(
 
     if verbose:
         # Enable verbose logging
+        import logging
 
         logging.basicConfig(
             level=logging.DEBUG,
@@ -176,8 +176,8 @@ def setup(
     manifest = Manifest(name=name, minecraft=mc, loader=loader, loader_version=loader_version)
     (pack_dir / "ModForge-CLI.json").write_text(manifest.model_dump_json(indent=4))
 
-    # Create Modrinth index
-    # Map loader names to their dependency keys
+    # Create Modrinth index following official format
+    # See: https://docs.modrinth.com/docs/modpacks/format/
     loader_key_map = {
         "fabric": "fabric-loader",
         "quilt": "quilt-loader",
@@ -191,8 +191,8 @@ def setup(
         "game": "minecraft",
         "versionId": "1.0.0",
         "name": name,
-        "dependencies": {"minecraft": mc, loader_key: loader_version},
-        "files": [],  # Only for overrides, not mods
+        "files": [],  # Will be populated during build
+        "dependencies": {loader_key: loader_version, "minecraft": mc},
     }
     (pack_dir / "modrinth.index.json").write_text(json.dumps(index_data, indent=2))
 
@@ -367,7 +367,6 @@ def export(pack_name: str | None = None) -> None:
 
         if not installer.exists():
             console.print("[yellow]Downloading Fabric installer...[/yellow]")
-            
 
             urllib.request.urlretrieve(FABRIC_INSTALLER_URL, installer)
 
@@ -492,7 +491,6 @@ def doctor() -> None:
 
     # Check Java
     try:
-
         result = subprocess.run(["java", "-version"], capture_output=True, text=True, check=True)
         console.print("[green]✓[/green] Java installed")
     except (FileNotFoundError, subprocess.CalledProcessError):

@@ -34,6 +34,10 @@ class ModDownloader:
 
         self.index = json.loads(index_file.read_text())
 
+        # Ensure files array exists
+        if "files" not in self.index:
+            self.index["files"] = []
+
     def _select_compatible_version(self, versions: list[dict]) -> dict | None:
         """
         Select the most appropriate version based on:
@@ -75,11 +79,11 @@ class ModDownloader:
 
     async def download_all(self, project_ids: Iterable[str]) -> None:
         """
-        Download all mods and update modrinth.index.json dependencies.
+        Download all mods and register them in modrinth.index.json.
 
-        Note: Modrinth launchers auto-download mods based on dependencies.
-        We download to mods/ folder for local use, but the index only needs
-        the version IDs in dependencies, not file paths.
+        The index format follows Modrinth's standard:
+        - files: array of all mods with hashes, URLs, and metadata
+        - dependencies: MC version and loader version
         """
         tasks = [self._download_project(pid) for pid in project_ids]
 
@@ -95,34 +99,8 @@ class ModDownloader:
                 await coro
                 progress.advance(task_id)
 
-        # Update dependencies section with correct loader version
-        self._update_dependencies()
+        # Write updated index
         self.index_file.write_text(json.dumps(self.index, indent=2))
-
-    def _update_dependencies(self) -> None:
-        """
-        Ensure dependencies section has correct MC version and loader.
-        This is what launchers use to setup the game.
-        """
-        if "dependencies" not in self.index:
-            self.index["dependencies"] = {}
-
-        # Set Minecraft version
-        self.index["dependencies"]["minecraft"] = self.mc_version
-
-        # Set loader (fabric-loader, forge, quilt-loader, neoforge)
-        loader_key_map = {
-            "fabric": "fabric-loader",
-            "quilt": "quilt-loader",
-            "forge": "forge",
-            "neoforge": "neoforge",
-        }
-
-        loader_key = loader_key_map.get(self.loader.lower(), self.loader.lower())
-
-        # Use "*" to let launcher pick latest compatible version
-        # Or you can specify exact version if available
-        self.index["dependencies"][loader_key] = "*"
 
     async def _download_project(self, project_id: str) -> None:
         # 1. Fetch all versions for this project
@@ -171,17 +149,21 @@ class ModDownloader:
         # 4. Download file to mods/ directory
         dest = self.output_dir / primary_file["filename"]
 
-        # Skip if already downloaded and hash matches
-        if dest.exists():
-            existing_hash = hashlib.sha1(dest.read_bytes()).hexdigest()
-            if existing_hash == primary_file["hashes"]["sha1"]:
-                console.print(f"[dim]✓ {primary_file['filename']} (cached)[/dim]")
-                return
-            else:
-                console.print(
-                    f"[yellow]Re-downloading {primary_file['filename']} (hash mismatch)[/yellow]"
-                )
+        # Check if already registered in index
+        existing_entry = next(
+            (f for f in self.index["files"] if f["path"] == f"mods/{primary_file['filename']}"),
+            None,
+        )
 
+        if existing_entry:
+            # Verify hash matches
+            if dest.exists():
+                existing_hash = hashlib.sha1(dest.read_bytes()).hexdigest()
+                if existing_hash == primary_file["hashes"]["sha1"]:
+                    console.print(f"[dim]✓ {primary_file['filename']} (cached)[/dim]")
+                    return
+
+        # Download the file
         try:
             async with self.session.get(primary_file["url"]) as r:
                 if r.status != 200:
@@ -197,13 +179,30 @@ class ModDownloader:
 
         # 5. Verify hash
         sha1 = hashlib.sha1(data).hexdigest()
+        sha512 = hashlib.sha512(data).hexdigest()
+
         if sha1 != primary_file["hashes"]["sha1"]:
-            dest.unlink(missing_ok=True)  # Delete corrupted file
+            dest.unlink(missing_ok=True)
             raise RuntimeError(
                 f"Hash mismatch for {primary_file['filename']}\n"
                 f"  Expected: {primary_file['hashes']['sha1']}\n"
                 f"  Got:      {sha1}"
             )
+
+        # 6. Register in index (Modrinth format)
+        file_entry = {
+            "path": f"mods/{primary_file['filename']}",
+            "hashes": {"sha1": sha1, "sha512": sha512},
+            "env": {"client": "required", "server": "required"},
+            "downloads": [primary_file["url"]],
+            "fileSize": primary_file["size"],
+        }
+
+        # Remove existing entry if present (update scenario)
+        self.index["files"] = [f for f in self.index["files"] if f["path"] != file_entry["path"]]
+
+        # Add new entry
+        self.index["files"].append(file_entry)
 
         console.print(
             f"[green]✓[/green] {primary_file['filename']} "

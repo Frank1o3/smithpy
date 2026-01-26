@@ -1,2 +1,2 @@
-__version__ = "0.1.4"
+__version__ = "x.x.x" # will get replaced by github workflow
 __author__ = "Frank1o3"

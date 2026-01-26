@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from typing import Optional
 import urllib.request
 
 from pyfiglet import figlet_format
@@ -55,7 +54,6 @@ POLICY_PATH = CONFIG_PATH / "policy.json"
 
 # Use versioned URLs to prevent breaking changes
 GITHUB_RAW = "https://raw.githubusercontent.com/Frank1o3/ModForge-CLI"
-VERSION_TAG = "v0.1.8"  # Update this with each release
 
 FABRIC_INSTALLER_URL = (
     "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.1.1/fabric-installer-1.1.1.jar"
@@ -64,8 +62,8 @@ FABRIC_INSTALLER_SHA256 = (
     "8fa465768bd7fc452e08c3a1e5c8a6b4b5f6a4e64bc7def47f89d8d3a6f4e7b8"  # Replace with actual hash
 )
 
-DEFAULT_MODRINTH_API_URL = f"{GITHUB_RAW}/{VERSION_TAG}/configs/modrinth_api.json"
-DEFAULT_POLICY_URL = f"{GITHUB_RAW}/{VERSION_TAG}/configs/policy.json"
+DEFAULT_MODRINTH_API_URL = f"{GITHUB_RAW}/{__version__}/configs/modrinth_api.json"
+DEFAULT_POLICY_URL = f"{GITHUB_RAW}/{__version__}/configs/policy.json"
 
 # Setup crash logging
 LOG_DIR = setup_crash_logging()
@@ -78,7 +76,7 @@ ensure_config_file(POLICY_PATH, DEFAULT_POLICY_URL, "Policy", console)
 api = ModrinthAPIConfig(MODRINTH_API)
 
 
-def render_banner():
+def render_banner() -> None:
     """Renders a stylized banner"""
     width = console.width
     font = "slant" if width > 60 else "small"
@@ -108,9 +106,9 @@ def render_banner():
 @app.callback(invoke_without_command=True)
 def main_callback(
     ctx: typer.Context,
-    version: Optional[bool] = typer.Option(None, "--version", "-v", help="Show version and exit"),
-    verbose: Optional[bool] = typer.Option(None, "--verbose", help="Enable verbose logging"),
-):
+    version: bool | None = typer.Option(None, "--version", "-v", help="Show version and exit"),
+    verbose: bool | None = typer.Option(None, "--verbose", help="Enable verbose logging"),
+) -> None:
     """ModForge-CLI: A powerful Minecraft modpack manager for Modrinth."""
 
     if verbose:
@@ -151,7 +149,7 @@ def setup(
     mc: str = "1.21.1",
     loader: str = "fabric",
     loader_version: str = FABRIC_LOADER_VERSION,
-):
+) -> None:
     """Initialize a new modpack project"""
     pack_dir = Path.cwd() / name
 
@@ -197,7 +195,7 @@ def setup(
 
 
 @app.command()
-def add(name: str, project_type: str = "mod", pack_name: Optional[str] = None):
+def add(name: str, project_type: str = "mod", pack_name: str | None = None) -> None:
     """Add a project to the manifest"""
 
     if project_type not in ["mod", "resourcepack", "shaderpack"]:
@@ -219,7 +217,7 @@ def add(name: str, project_type: str = "mod", pack_name: Optional[str] = None):
     if pack_name not in registry:
         console.print(f"[red]Pack '{pack_name}' not found in registry[/red]")
         console.print("[yellow]Available packs:[/yellow]")
-        for p in registry.keys():
+        for p in registry:
             console.print(f"  - {p}")
         raise typer.Exit(1)
 
@@ -235,7 +233,7 @@ def add(name: str, project_type: str = "mod", pack_name: Optional[str] = None):
 
 
 @app.command()
-def resolve(pack_name: Optional[str] = None):
+def resolve(pack_name: str | None = None) -> None:
     """Resolve all mod dependencies"""
 
     # Auto-detect pack
@@ -257,7 +255,7 @@ def resolve(pack_name: Optional[str] = None):
 
     manifest = get_manifest(console, pack_path)
     if not manifest:
-        console.print(f"[red]Could not load manifest[/red]")
+        console.print("[red]Could not load manifest[/red]")
         raise typer.Exit(1)
 
     console.print(f"[cyan]Resolving dependencies for {pack_name}...[/cyan]")
@@ -267,7 +265,7 @@ def resolve(pack_name: Optional[str] = None):
         policy=policy, api=api, mc_version=manifest.minecraft, loader=manifest.loader
     )
 
-    async def do_resolve():
+    async def do_resolve() -> set[str]:
         async with await get_api_session() as session:
             return await resolver.resolve(manifest.mods, session)
 
@@ -275,7 +273,7 @@ def resolve(pack_name: Optional[str] = None):
         resolved_mods = asyncio.run(do_resolve())
     except Exception as e:
         console.print(f"[red]Resolution failed:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     manifest.mods = sorted(list(resolved_mods))
     manifest_file.write_text(manifest.model_dump_json(indent=4))
@@ -284,7 +282,7 @@ def resolve(pack_name: Optional[str] = None):
 
 
 @app.command()
-def build(pack_name: Optional[str] = None):
+def build(pack_name: str | None = None) -> None:
     """Download all mods and dependencies"""
 
     if not pack_name:
@@ -318,11 +316,11 @@ def build(pack_name: Optional[str] = None):
         console.print("[green]✓ Build complete[/green]")
     except Exception as e:
         console.print(f"[red]Build failed:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
-def export(pack_name: Optional[str] = None):
+def export(pack_name: str | None = None) -> None:
     """Create final .mrpack file"""
 
     if not pack_name:
@@ -379,7 +377,7 @@ def export(pack_name: Optional[str] = None):
             )
         except RuntimeError as e:
             console.print(f"[red]{e}[/red]")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
 
         # Update index
         index_file = pack_path / "modrinth.index.json"
@@ -406,7 +404,7 @@ def export(pack_name: Optional[str] = None):
 
 
 @app.command()
-def remove(pack_name: str):
+def remove(pack_name: str) -> None:
     """Remove a modpack and unregister it"""
     registry = load_registry(REGISTRY_PATH)
 
@@ -442,7 +440,7 @@ def remove(pack_name: str):
 
 
 @app.command(name="ls")
-def list_projects():
+def list_projects() -> None:
     """List all registered modpacks"""
     registry = load_registry(REGISTRY_PATH)
 
@@ -462,7 +460,7 @@ def list_projects():
 
 
 @app.command()
-def doctor():
+def doctor() -> None:
     """Validate ModForge-CLI installation"""
     console.print("[bold cyan]Running diagnostics...[/bold cyan]\n")
 
@@ -471,11 +469,7 @@ def doctor():
     # Check Python version
 
     py_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-    if sys.version_info >= (3, 10):
-        console.print(f"[green]✓[/green] Python {py_version}")
-    else:
-        console.print(f"[red]✗[/red] Python {py_version} (requires 3.10+)")
-        issues.append("Upgrade Python")
+    console.print(f"[green]✓[/green] Python {py_version}")
 
     # Check config files
     for name, path in [("API Config", MODRINTH_API), ("Policy", POLICY_PATH)]:
@@ -508,16 +502,16 @@ def doctor():
 
 
 @app.command(name="self-update")
-def self_update_cmd():
+def self_update_cmd() -> None:
     """Update ModForge-CLI to latest version"""
     try:
         self_update(console)
     except Exception as e:
         console.print(f"[red]Update failed:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
-def main():
+def main() -> None:
     app()
 
 

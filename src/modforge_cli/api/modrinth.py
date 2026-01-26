@@ -21,9 +21,7 @@ class ModrinthAPIConfig:
 
     def _load_config(self) -> None:
         if not self.config_path.exists():
-            raise FileNotFoundError(
-                f"Modrinth API config not found: {self.config_path}"
-            )
+            raise FileNotFoundError(f"Modrinth API config not found: {self.config_path}")
 
         with open(self.config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -123,9 +121,7 @@ class ModrinthAPIConfig:
         return self.build_url(self.endpoints["projects"]["project"], id=project_id)
 
     def project_versions(self, project_id: str) -> str:
-        return self.build_url(
-            self.endpoints["projects"]["project_versions"], id=project_id
-        )
+        return self.build_url(self.endpoints["projects"]["project_versions"], id=project_id)
 
     def project_dependencies(self, project_id: str) -> str:
         return self.build_url(self.endpoints["projects"]["dependencies"], id=project_id)
@@ -137,9 +133,7 @@ class ModrinthAPIConfig:
         return self.build_url(self.endpoints["projects"]["icon"], id=project_id)
 
     def check_following(self, project_id: str) -> str:
-        return self.build_url(
-            self.endpoints["projects"]["check_following"], id=project_id
-        )
+        return self.build_url(self.endpoints["projects"]["check_following"], id=project_id)
 
     # === Versions ===
 
@@ -158,9 +152,7 @@ class ModrinthAPIConfig:
         return self.build_url(self.endpoints["versions"]["file_by_hash"], hash=hash_)
 
     def versions_by_hash(self, hash_: str) -> str:
-        return self.build_url(
-            self.endpoints["versions"]["versions_by_hash"], hash=hash_
-        )
+        return self.build_url(self.endpoints["versions"]["versions_by_hash"], hash=hash_)
 
     def latest_version_for_hash(self, hash_: str, algorithm: str = "sha1") -> str:
         return self.build_url(

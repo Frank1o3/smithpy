@@ -1,21 +1,22 @@
 from __future__ import annotations
 
+from collections import deque
+from collections.abc import Iterable
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Set, TypedDict
+from typing import TypedDict
 from urllib.parse import urlparse
 from urllib.request import urlopen
-from collections import deque
 
 from jsonschema import ValidationError, validate
 
 
 class NormalizedModRule(TypedDict):
-    conflicts: Set[str]
-    sub_mods: Set[str]
+    conflicts: set[str]
+    sub_mods: set[str]
 
 
-NormalizedPolicyRules = Dict[str, NormalizedModRule]
+NormalizedPolicyRules = dict[str, NormalizedModRule]
 
 
 class PolicyError(RuntimeError):
@@ -23,7 +24,7 @@ class PolicyError(RuntimeError):
 
 
 # -------- schema cache (performance + offline safety) --------
-_SCHEMA_CACHE: Dict[str, dict] = {}
+_SCHEMA_CACHE: dict[str, dict] = {}
 
 
 def _load_schema(schema_ref: str, base_path: Path) -> dict:
@@ -101,15 +102,15 @@ class ModPolicy:
 
     # ---------- public API ----------
 
-    def apply(self, mods: Iterable[str]) -> Set[str]:
+    def apply(self, mods: Iterable[str]) -> set[str]:
         """
         Apply policy to a mod set.
         Recursively adds sub-mods and removes conflicts.
         Explicit mods always win over implicit ones.
         """
-        explicit: Set[str] = set(mods)
-        active: Set[str] = set(explicit)
-        implicit: Set[str] = set()
+        explicit: set[str] = set(mods)
+        active: set[str] = set(explicit)
+        implicit: set[str] = set()
 
         queue = deque(active)
 
@@ -135,9 +136,7 @@ class ModPolicy:
             for conflict in rule["conflicts"]:
                 if conflict in active:
                     if conflict in explicit and mod in explicit:
-                        raise PolicyError(
-                            f"Explicit mod conflict: {mod} ↔ {conflict}"
-                        )
+                        raise PolicyError(f"Explicit mod conflict: {mod} ↔ {conflict}")
 
                     if conflict in implicit:
                         active.remove(conflict)
@@ -146,7 +145,7 @@ class ModPolicy:
         del queue, explicit, implicit
         return active
 
-    def diff(self, mods: Iterable[str]) -> Dict[str, List[str]]:
+    def diff(self, mods: Iterable[str]) -> dict[str, list[str]]:
         """
         Show what would change without applying.
         """

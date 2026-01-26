@@ -1,14 +1,15 @@
-from typing import Iterable, Set
+import asyncio
 from collections import deque
+from collections.abc import Iterable
 
-from modforge_cli.core.policy import ModPolicy
-from modforge_cli.core.models import SearchResult, ProjectVersionList, ProjectVersion
+import aiohttp
+
 from modforge_cli.api import ModrinthAPIConfig
-from requests import get
-
+from modforge_cli.core.models import ProjectVersion, ProjectVersionList, SearchResult
+from modforge_cli.core.policy import ModPolicy
 
 try:
-    from modforge_cli.__version__ import __version__, __author__
+    from modforge_cli.__version__ import __author__, __version__
 except ImportError:
     __version__ = "unknown"
     __author__ = "Frank1o3"
@@ -28,9 +29,7 @@ class ModResolver:
         self.mc_version = mc_version
         self.loader = loader
 
-        self._headers = {
-            "User-Agent": f"{__author__}/ModForge-CLI/{__version__}"
-        }
+        self._headers = {"User-Agent": f"{__author__}/ModForge-CLI/{__version__}"}
 
     def _select_version(self, versions: list[ProjectVersion]) -> ProjectVersion | None:
         """
@@ -39,96 +38,147 @@ class ModResolver:
         2. Matching MC + loader
         """
         for v in versions:
-            if (
-                v.is_release
-                and self.mc_version in v.game_versions
-                and self.loader in v.loaders
-            ):
+            if v.is_release and self.mc_version in v.game_versions and self.loader in v.loaders:
                 return v
 
         for v in versions:
-            if (
-                self.mc_version in v.game_versions
-                and self.loader in v.loaders
-            ):
+            if self.mc_version in v.game_versions and self.loader in v.loaders:
                 return v
 
         return None
 
-    def resolve(self, mods: Iterable[str]) -> Set[str]:
+    async def _search_project(self, slug: str, session: aiohttp.ClientSession) -> str | None:
+        """Search for a project by slug and return its project_id"""
+        url = self.api.search(
+            slug,
+            game_versions=[self.mc_version],
+            loaders=[self.loader],
+        )
+
+        try:
+            async with session.get(url) as response:
+                data = SearchResult.model_validate_json(await response.text())
+
+            for hit in data.hits:
+                if hit.project_type != "mod":
+                    continue
+                if self.mc_version not in hit.versions:
+                    continue
+                return hit.project_id
+        except Exception as e:
+            print(f"Warning: Failed to search for '{slug}': {e}")
+
+        return None
+
+    async def _fetch_versions(
+        self, project_id: str, session: aiohttp.ClientSession
+    ) -> list[ProjectVersion]:
+        """Fetch all versions for a project"""
+        url = self.api.project_versions(project_id)
+
+        try:
+            async with session.get(url) as response:
+                return ProjectVersionList.validate_json(await response.text())
+        except Exception as e:
+            print(f"Warning: Failed to fetch versions for '{project_id}': {e}")
+            return []
+
+    async def resolve(self, mods: Iterable[str], session: aiohttp.ClientSession) -> set[str]:
+        """
+        Asynchronously resolve all mod dependencies.
+
+        Args:
+            mods: Initial list of mod slugs
+            session: Active aiohttp session
+
+        Returns:
+            Set of resolved project IDs
+        """
         expanded = self.policy.apply(mods)
 
-        resolved: Set[str] = set()
+        resolved: set[str] = set()
         queue: deque[str] = deque()
 
         search_cache: dict[str, str | None] = {}
         version_cache: dict[str, list[ProjectVersion]] = {}
 
-        # ---- Phase 1: slug → project_id ----
+        # ---- Phase 1: slug → project_id (parallel) ----
+        search_tasks = []
+        slugs_to_search = []
+
         for slug in expanded:
             if slug not in search_cache:
-                url = self.api.search(
-                    slug,
-                    game_versions=[self.mc_version],
-                    loaders=[self.loader],
-                )
-                response = get(url, headers=self._headers)
-                data = SearchResult.model_validate_json(response.text)
+                slugs_to_search.append(slug)
+                search_tasks.append(self._search_project(slug, session))
 
-                project_id = None
-                for hit in data.hits:
-                    if hit.project_type != "mod":
-                        continue
-                    if self.mc_version not in hit.versions:
-                        continue
-                    project_id = hit.project_id
-                    break
+        if search_tasks:
+            search_results = await asyncio.gather(*search_tasks, return_exceptions=True)
 
-                search_cache[slug] = project_id
-                del url, response, data
+            for slug, result in zip(slugs_to_search, search_results):
+                if isinstance(result, Exception):
+                    print(f"Error searching for '{slug}': {result}")
+                    search_cache[slug] = None
+                else:
+                    search_cache[slug] = result
 
-            project_id = search_cache[slug]
+        # Add found projects to queue
+        for slug in expanded:
+            project_id = search_cache.get(slug)
             if project_id and project_id not in resolved:
                 resolved.add(project_id)
                 queue.append(project_id)
 
-        # ---- Phase 2: dependency resolution ----
+        # ---- Phase 2: dependency resolution (batched) ----
+        BATCH_SIZE = 10
+
         while queue:
-            pid = queue.popleft()
+            # Process in batches to avoid overwhelming the API
+            batch = []
+            for _ in range(min(len(queue), BATCH_SIZE)):
+                if queue:
+                    batch.append(queue.popleft())
 
-            if pid not in version_cache:
-                url = self.api.project_versions(pid)
-                response = get(url, headers=self._headers)
-                versions = ProjectVersionList.validate_json(response.text)
-                version_cache[pid] = versions
-                del url, response
-            else:
-                versions = version_cache[pid]
+            # Fetch versions for batch in parallel
+            version_tasks = []
+            projects_to_fetch = []
 
-            version = self._select_version(versions)
-            if not version:
-                continue
+            for pid in batch:
+                if pid not in version_cache:
+                    projects_to_fetch.append(pid)
+                    version_tasks.append(self._fetch_versions(pid, session))
 
-            for dep in version.dependencies:
-                dtype = dep.dependency_type
-                dep_id = dep.project_id
+            if version_tasks:
+                version_results = await asyncio.gather(*version_tasks, return_exceptions=True)
 
-                if not dep_id:
+                for pid, result in zip(projects_to_fetch, version_results, strict=False):
+                    if isinstance(result, Exception):
+                        print(f"Error fetching versions for '{pid}': {result}")
+                        version_cache[pid] = []
+                    else:
+                        version_cache[pid] = result
+
+            # Process dependencies
+            for pid in batch:
+                versions = version_cache.get(pid, [])
+                version = self._select_version(versions)
+
+                if not version:
+                    print(f"Warning: No compatible version found for '{pid}'")
                     continue
 
-                if dtype == "incompatible":
-                    raise RuntimeError(
-                        f"Incompatible dependency detected: {pid} ↔ {dep_id}"
-                    )
+                for dep in version.dependencies:
+                    dtype = dep.dependency_type
+                    dep_id = dep.project_id
 
-                if dtype in ("required", "optional"):
-                    if dep_id not in resolved:
+                    if not dep_id:
+                        continue
+
+                    if dtype == "incompatible":
+                        raise RuntimeError(f"Incompatible dependency detected: {pid} ↔ {dep_id}")
+
+                    if dtype in ("required", "optional") and dep_id not in resolved:
                         resolved.add(dep_id)
                         queue.append(dep_id)
-
-                # embedded deps are intentionally ignored
-
-            del versions, version, pid
 
         del queue, expanded, search_cache, version_cache
         return resolved

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable
 
 import aiohttp
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 
 from modforge_cli.api import ModrinthAPIConfig
 
@@ -34,7 +34,7 @@ class ModDownloader:
 
         self.index = json.loads(index_file.read_text())
 
-    async def download_all(self, project_ids: Iterable[str]):
+    async def download_all(self, project_ids: Iterable[str]) -> None:
         tasks = [self._download_project(pid) for pid in project_ids]
 
         with Progress(
@@ -51,11 +51,9 @@ class ModDownloader:
 
         self.index_file.write_text(json.dumps(self.index, indent=2))
 
-    async def _download_project(self, project_id: str):
+    async def _download_project(self, project_id: str) -> None:
         # 1. Fetch compatible version
-        url = self.api.project_versions(
-            project_id
-        )
+        url = self.api.project_versions(project_id)
 
         async with self.session.get(url) as r:
             versions = await r.json()
